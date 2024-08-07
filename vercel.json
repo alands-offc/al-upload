@@ -5,5 +5,9 @@
   ],
   "routes": [
     { "src": "/.*", "dest": "/upload.js" }
-  ]
+  ],
+    "functions": {
+    "/upload.js": {
+      "maxDuration": 40 // This function can run for a maximum of 30 seconds
+    }
 }
