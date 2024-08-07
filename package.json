@@ -1,0 +1,14 @@
+{
+"scripts": {
+"start": "node upload.js"
+},
+  "dependencies": {
+    "express": "latest",
+    "path": "latest",
+    "gridfs-stream": "latest",
+    "mongoose": "latest",
+    "multer": "latest",
+    "method-override": "latest",
+    "multer-gridfs-storage": "latest"
+  }
+}
