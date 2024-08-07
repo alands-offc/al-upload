@@ -26,7 +26,7 @@ function generateErrorPage(status, message) {
   <title>Error ${status}</title>
   <style>
     body {
-      background-image: url('https://www.transparenttextures.com/patterns/snow.png');
+      background-image: url('https://telegra.ph/file/6877f86f35d68bd8c10a4.jpg');
       color: white;
       text-align: center;
       font-family: Arial, sans-serif;
@@ -70,16 +70,7 @@ function generateErrorPage(status, message) {
 }
 
 // Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  const status = err.status || 500;
-  res.status(status).send(generateErrorPage(status, err.message || 'Internal Server Error'));
-});
 
-// 404 Not Found middleware
-app.use((req, res) => {
-  res.status(404).send(generateErrorPage(404, 'Page Not Found'));
-});
 const mongoURI = 'mongodb+srv://alanqwerty:qwerty123@cluster0.cjvb1q8.mongodb.net/mydatabase?retryWrites=true&w=majority'; 
 mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log('MongoDB udh konek'))
@@ -127,7 +118,16 @@ app.get('/files/:id', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  const status = err.status || 500;
+  res.status(status).send(generateErrorPage(status, err.message || 'Internal Server Error'));
+});
 
+// 404 Not Found middleware
+app.use((req, res) => {
+  res.status(404).send(generateErrorPage(404, 'Page Not Found'));
+});
 app.listen(PORT, () => {
   console.log(`Serper jalan di http://localhost:${PORT}`);
 });
