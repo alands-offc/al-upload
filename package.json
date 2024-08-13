@@ -5,6 +5,7 @@
   "dependencies": {
     "express": "latest",
     "path": "latest",
+    "mime": "latest"
     "gridfs-stream": "latest",
     "fs": "latest",
     "multer": "latest",
