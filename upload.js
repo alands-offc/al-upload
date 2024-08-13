@@ -13,7 +13,7 @@ global.baseurl
 app.use((req, res, next) => {
 
 const host = req.get('host');
-global.baseurl = `https://${host}/upload/`;
+global.baseurl = `https://${host}/`;
 next();
 });
 function generateErrorPage(status, message) {
@@ -96,7 +96,7 @@ app.post('/upload', upload.single('file'), async (req, res) => {
       mimetype: req.file.mimetype
     });
     await newFile.save();
-    res.json({ Url: global.baseurl + newFile._id, fileId: newFile._id, fileName: newFile.originalname });
+    res.json({ Url: global.baseurl + "files/" + newFile._id, fileId: newFile._id, fileName: newFile.originalname });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
