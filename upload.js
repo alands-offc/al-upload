@@ -66,19 +66,15 @@ function generateErrorPage(status, message) {
 <body>
   <h1>Error ${status}</h1>
   <p>${message}</p>
-  <a href="/docs">Back to Docs</a>
+  <a href="/">Back to Home</a>
 </body>
 </html>
   `;
 }
 
 // Setup untuk direktori penyimpanan
-const TMP_DIR = path.join(__dirname, 'tmp');
+const TMP_DIR = "/tmp/"
 
-// Membuat direktori jika belum ada
-if (!fs.existsSync(TMP_DIR)) {
-  fs.mkdirSync(TMP_DIR, { recursive: true });
-}
 
 // Konfigurasi penyimpanan file dengan multer
 const storage = multer.diskStorage({
