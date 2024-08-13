@@ -1,3 +1,4 @@
+(async () => {
 const express = require('express');
 const multer = require('multer');
 const methodOverride = require('method-override');
@@ -5,7 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const app = express();
 const PORT = 3000;
-const mime = (await import("mime"))
+const mime = await import("mime")
 app.use(express.json());
 app.set('json spaces', 2);
 app.use(methodOverride('_method'));
@@ -155,3 +156,4 @@ app.use((req, res) => {
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });
+  })();
