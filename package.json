@@ -6,7 +6,7 @@
     "express": "latest",
     "path": "latest",
     "gridfs-stream": "latest",
-    "mongoose": "latest",
+    "fs": "latest",
     "multer": "latest",
     "method-override": "latest",
     "multer-gridfs-storage": "latest"

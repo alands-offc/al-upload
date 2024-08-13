@@ -1,21 +1,24 @@
 const express = require('express');
-const mongoose = require('mongoose');
 const multer = require('multer');
 const methodOverride = require('method-override');
+const fs = require('fs');
+const path = require('path');
 const app = express();
 const PORT = 3000;
-const path = require("path")
+
 app.use(express.json());
 app.set('json spaces', 2);
 app.use(methodOverride('_method'));
-global.baseurl
 
+global.baseurl;
+
+// Middleware untuk mendapatkan base URL
 app.use((req, res, next) => {
-
-const host = req.get('host');
-global.baseurl = `https://${host}/`;
-next();
+  const host = req.get('host');
+  global.baseurl = `https://${host}/`;
+  next();
 });
+
 function generateErrorPage(status, message) {
   return `
 <!DOCTYPE html>
@@ -69,82 +72,79 @@ function generateErrorPage(status, message) {
   `;
 }
 
-// Error handling middleware
+// Setup untuk direktori penyimpanan
+const TMP_DIR = path.join(__dirname, 'tmp');
 
-const mongoURI = 'mongodb+srv://alanqwerty:qwerty123@cluster0.cjvb1q8.mongodb.net/mydatabase?retryWrites=true&w=majority'; 
-mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
-  .then(() => console.log('MongoDB udh konek'))
-  .catch(err => console.error(err));
-const fileSchema = new mongoose.Schema({
-  filename: String,
-  originalname: String,
-  buffer: Buffer,
-  size: Number,
-  mimetype: String,
-  uploadDate: { type: Date, default: Date.now }
+// Membuat direktori jika belum ada
+if (!fs.existsSync(TMP_DIR)) {
+  fs.mkdirSync(TMP_DIR, { recursive: true });
+}
+
+// Konfigurasi penyimpanan file dengan multer
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, TMP_DIR);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, `${uniqueSuffix}-${file.originalname}`);
+  }
 });
-const File = mongoose.model('File', fileSchema);
-const storage = multer.memoryStorage();
+
 const upload = multer({ storage });
+
+// Route untuk upload file
 app.post('/upload', upload.single('file'), async (req, res) => {
   try {
-    const fileExtension = req.file.mimetype.split('/')[1];
-    const newFile = new File({
-      filename: req.file.originalname,
-      originalname: req.file.originalname,
-      buffer: req.file.buffer,
-      size: req.file.size,
-      mimetype: req.file.mimetype
-    });
-    await newFile.save();
-    
-    const fileIdWithExtension = newFile._id + '.' + fileExtension;
+    const filePath = path.join(TMP_DIR, req.file.filename);
     res.json({ 
-      Url: global.baseurl + "files/" + fileIdWithExtension, 
-      fileId: fileIdWithExtension, 
-      fileName: newFile.originalname 
+      Url: global.baseurl + "files/" + req.file.filename, 
+      fileName: req.file.originalname,
+      path: filePath 
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
+// Route untuk menampilkan file
+app.get('/files/:filename', async (req, res) => {
+  try {
+    const filePath = path.join(TMP_DIR, req.params.filename);
+    
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ err: 'No file exists' });
+    }
+
+    const mimeType = mime.getType(filePath);
+    res.set('Content-Type', mimeType);
+    res.set('Content-Disposition', 'inline'); // Pastikan ditampilkan secara inline
+    fs.createReadStream(filePath).pipe(res);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Route untuk download file
+app.get('/download/:filename', async (req, res) => {
+  try {
+    const filePath = path.join(TMP_DIR, req.params.filename);
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ err: 'No file exists' });
+    }
+
+    const originalFileName = req.params.filename.split('-').slice(1).join('-'); // Mengambil nama asli file
+    res.set('Content-Disposition', `attachment; filename="${originalFileName}"`);
+    res.download(filePath, originalFileName);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 app.get("/", async (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
-app.get('/files/:id', async (req, res) => {
-  try {
-    const fileId = req.params.id.split('.')[0]; // Extract the file ID
-    const file = await File.findById(fileId);
-    if (!file) {
-      return res.status(404).json({ err: 'No file exists' });
-    }
 
-    res.set('Content-Type', file.mimetype);
-    res.set('Content-Disposition', 'inline'); // Ensure inline display
-    res.send(file.buffer);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-app.get('/download/:id', async (req, res) => {
-  try {
-    const fileId = req.params.id.split('.')[0]; // Extract the file ID
-    const file = await File.findById(fileId);
-    if (!file) {
-      return res.status(404).json({ err: 'No file exists' });
-    }
-
-    const fileExtension = file.mimetype.split('/')[1];
-    const fileName = file.originalname || `${file._id}.${fileExtension}`;
-
-    res.set('Content-Type', file.mimetype);
-    res.set('Content-Disposition', `attachment; filename="${fileName}"`);
-    res.send(file.buffer);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
 app.use((err, req, res, next) => {
   console.error(err.stack);
   const status = err.status || 500;
@@ -155,6 +155,7 @@ app.use((err, req, res, next) => {
 app.use((req, res) => {
   res.status(404).send(generateErrorPage(404, 'Page Not Found'));
 });
+
 app.listen(PORT, () => {
-  console.log(`Serper jalan di http://localhost:${PORT}`);
+  console.log(`Server running at http://localhost:${PORT}`);
 });
