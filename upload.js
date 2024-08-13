@@ -6,7 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const app = express();
 const PORT = 3000;
-const mime = await import("mime")
+const mime = require("mime")
 app.use(express.json());
 app.set('json spaces', 2);
 app.use(methodOverride('_method'));
