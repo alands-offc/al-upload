@@ -88,6 +88,7 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage });
 app.post('/upload', upload.single('file'), async (req, res) => {
   try {
+    const fileExtension = req.file.mimetype.split('/')[1];
     const newFile = new File({
       filename: req.file.originalname,
       originalname: req.file.originalname,
@@ -96,7 +97,13 @@ app.post('/upload', upload.single('file'), async (req, res) => {
       mimetype: req.file.mimetype
     });
     await newFile.save();
-    res.json({ Url: global.baseurl + "files/" + newFile._id, fileId: newFile._id, fileName: newFile.originalname });
+    
+    const fileIdWithExtension = newFile._id + '.' + fileExtension;
+    res.json({ 
+      Url: global.baseurl + "files/" + fileIdWithExtension, 
+      fileId: fileIdWithExtension, 
+      fileName: newFile.originalname 
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -107,12 +114,32 @@ app.get("/", async (req, res) => {
 });
 app.get('/files/:id', async (req, res) => {
   try {
-    const file = await File.findById(req.params.id);
+    const fileId = req.params.id.split('.')[0]; // Extract the file ID
+    const file = await File.findById(fileId);
     if (!file) {
       return res.status(404).json({ err: 'No file exists' });
     }
 
     res.set('Content-Type', file.mimetype);
+    res.set('Content-Disposition', 'inline'); // Ensure inline display
+    res.send(file.buffer);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+app.get('/download/:id', async (req, res) => {
+  try {
+    const fileId = req.params.id.split('.')[0]; // Extract the file ID
+    const file = await File.findById(fileId);
+    if (!file) {
+      return res.status(404).json({ err: 'No file exists' });
+    }
+
+    const fileExtension = file.mimetype.split('/')[1];
+    const fileName = file.originalname || `${file._id}.${fileExtension}`;
+
+    res.set('Content-Type', file.mimetype);
+    res.set('Content-Disposition', `attachment; filename="${fileName}"`);
     res.send(file.buffer);
   } catch (err) {
     res.status(500).json({ error: err.message });
